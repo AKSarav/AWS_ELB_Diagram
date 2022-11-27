@@ -80,13 +80,13 @@ def describelbs():
                 # lbjson['TG'].append=tgh
             else:
                 TGD['Instances']=""
-            print("TGD here",TGD)
+            # print("TGD here",TGD)
             TGLIST.append(TGD)
-            print("TGLIST",TGLIST)
+            # print("TGLIST",TGLIST)
             
         lbjson['TGData'] = TGLIST
-        print("result")
-        print(json.dumps(lbjson))    
+        # print("result")
+        # print(json.dumps(lbjson))    
 
         
 
@@ -94,14 +94,14 @@ def describelbs():
             if lbjson['Type'] == "application":
                 lb = ELB(lbjson['Name'])
                 for targetgroup in lbjson['TGData']:
-                    print("TGName",targetgroup['Name'])
+                    # print("TGName",targetgroup['Name'])
 
                     for instance in targetgroup['Instances']:
                         instance_group=[]
                         with Cluster(targetgroup['Name']):
-                            instance_group.append(EC2(instance['Name']))
+                            instance_group.append(EC2(instance['Target']['Id']))
                             lb >> instance_group
-                print(instance_group)
+                # print(instance_group)
             
             if lbjson['Type'] == "network":
                 lb = ELB(lbjson['Name'])
@@ -109,10 +109,17 @@ def describelbs():
                     print("TGName",targetgroup['Name'])
 
                     for instance in targetgroup['Instances']:
+                        # print("DEBUG",instance)
                         instance_group=[]
-                        with Cluster(targetgroup['Name']):
-                            instance_group.append(ELB(instance['Target']['Id'].split("/")[2]))
-                            lb >> instance_group
+                        # validate if it has a instance or another target group
+                        if "arn" in instance['Target']['Id']:
+                            with Cluster(targetgroup['Name']):
+                                instance_group.append(ELB(instance['Target']['Id'].split("/")[2]))
+                                lb >> instance_group
+                        else:
+                            with Cluster(targetgroup['Name']):
+                                instance_group.append(EC2(instance['Target']['Id']))
+                                lb >> instance_group
                 print(instance_group)
             
         
